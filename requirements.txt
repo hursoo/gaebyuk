@@ -1,0 +1,13 @@
+streamlit==1.36.0
+pandas
+numpy
+scikit-learn
+matplotlib
+wordcloud
+kiwipiepy==0.20.2
+soynlp==0.0.493
+openpyxl
+gspread
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
