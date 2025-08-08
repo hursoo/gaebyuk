@@ -85,7 +85,7 @@ if current == steps[0]:
     st.header("1) 데이터 입력")
     st.write("엑셀(.xlsx) 업로드 또는 Google Sheets에서 불러오기(서비스 계정 필요)")
 
-    tab1, tab2 = st.tabs(["엑셀 업로드", "Google Sheets"])
+    tab1, tab2, tab3 = st.tabs(["엑셀 업로드", "Google Sheets", "웹 스크래핑"])
 
     with tab1:
         up = st.file_uploader("엑셀(.xlsx) 업로드", type=["xlsx"])
@@ -114,6 +114,36 @@ if current == steps[0]:
                 st.dataframe(df.head(10))
             except Exception as e:
                 st.error(f"시트 읽기 실패: {e}")
+
+    with tab3:
+        st.markdown("**엑셀/시트의 URL 열을 사용하지 않고, 바로 URL 목록을 입력해 스크래핑합니다.**")
+        urls_text = st.text_area("URL 목록(줄바꿈으로 구분)", height=150,
+                                 placeholder="https://db.history.go.kr/.../rId=XXXXXXXXXXXXXXX\nhttps://db.history.go.kr/.../rId=YYYYYYYYYYYYYYY")
+        limit = st.number_input("앞에서부터 n개만 수집(테스트용)", 1, 10000, 10)
+        if st.button("스크래핑 실행"):
+            urls_list = [u.strip() for u in urls_text.splitlines() if u.strip()]
+            if not urls_list:
+                st.warning("URL을 한 줄에 하나씩 입력하세요.")
+            else:
+                contents_df = scraping.scrape_contents(urls_list, limit=limit)
+                st.success(f"스크래핑 완료: {contents_df.shape}")
+                st.dataframe(contents_df.head(10))
+                # 메타와 병합이 필요하면, 탭1/탭2에서 읽어온 메타 DF(st.session_state.raw_df)를 활용
+                if st.session_state.raw_df is not None:
+                    merged = scraping.join_with_meta(
+                        st.session_state.raw_df.copy(),
+                        contents_df,
+                        left_on="r_id_raw", right_on="r_id",
+                        keep_cols=["r_id", "r_id_raw", "title", "writer", "gisa_class", "date", "url", "year", "content"]
+                    )
+                    st.subheader("메타+본문 병합 결과")
+                    st.dataframe(merged.head(10))
+                    # 다음 단계에서 쓰도록 저장
+                    st.session_state.raw_df = merged
+                else:
+                    # 다음 단계에서 정제/토큰화로 쓰게 매핑
+                    st.session_state.raw_df = contents_df
+
 
 # ------------------------------------------------------------------------------------
 # Step 2: 정제/전처리
