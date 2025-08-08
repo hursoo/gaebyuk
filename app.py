@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 from pathlib import Path
 import platform, os
+from modules import scraping  # ← 추가
+
 
 st.set_page_config(page_title="개벽 텍스트 분석 워크플로우", page_icon="📚", layout="wide")
 
